@@ -160,6 +160,7 @@ static void clearGLError()
 }
 
 //==============================================================================
+#include "opengl/juce_OpenGLContextVersionSpecification.cpp"
 #include "opengl/juce_OpenGLFrameBuffer.cpp"
 #include "opengl/juce_OpenGLGraphicsContext.cpp"
 #include "opengl/juce_OpenGLHelpers.cpp"

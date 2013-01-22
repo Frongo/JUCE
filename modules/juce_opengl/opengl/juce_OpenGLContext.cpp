@@ -28,7 +28,7 @@ class OpenGLContext::CachedImage  : public CachedComponentImage,
 {
 public:
     CachedImage (OpenGLContext& c, Component& comp,
-                 const OpenGLPixelFormat& pixFormat, void* contextToShare)
+                 const OpenGLPixelFormat& pixFormat, void* contextToShare, const OpenGLContextVersionSpecification contextSpec)
         : Thread ("OpenGL Rendering"),
           context (c), component (comp),
           scale (1.0),
@@ -39,7 +39,7 @@ public:
          #endif
           needsUpdate (1)
     {
-        nativeContext = new NativeContext (component, pixFormat, contextToShare);
+        nativeContext = new NativeContext (component, pixFormat, contextToShare, contextSpec);
 
         if (nativeContext->createdOk())
             context.nativeContext = nativeContext;
@@ -474,7 +474,8 @@ private:
         Component& comp = *getComponent();
         CachedImage* const newCachedImage = new CachedImage (context, comp,
                                                              context.pixelFormat,
-                                                             context.contextToShareWith);
+                                                             context.contextToShareWith,
+                                                             context.contextVersionSpecification);
         comp.setCachedComponentImage (newCachedImage);
         newCachedImage->start(); // (must wait until this is attached before starting its thread)
         newCachedImage->updateViewportSize (true);
@@ -529,6 +530,15 @@ void OpenGLContext::setPixelFormat (const OpenGLPixelFormat& preferredPixelForma
     jassert (nativeContext == nullptr);
 
     pixelFormat = preferredPixelFormat;
+}
+
+void OpenGLContext::setContextVersionSpecification (const OpenGLContextVersionSpecification& preferredSpecification) noexcept
+{
+    // This method must not be called when the context has already been attached!
+    // Call it before attaching your context, or use detach() first, before calling this!
+    jassert (nativeContext == nullptr);
+
+    contextVersionSpecification = preferredSpecification;
 }
 
 void OpenGLContext::setNativeSharedContext (void* nativeContextToShareWith) noexcept
