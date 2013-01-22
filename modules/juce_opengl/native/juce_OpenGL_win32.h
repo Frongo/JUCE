@@ -65,13 +65,22 @@ public:
                 SetPixelFormat (dc, wglFormat, &pfd);
             }
 
+            else
+            {
+                SetPixelFormat (dc, pixFormat, &pfd);
+            }
+
             // create the context with an attribute list
             juce::Array<int> attribList;
 
-            attribList.add (WGL_CONTEXT_MAJOR_VERSION_ARB);
-            attribList.add (contextSpec.contextMajorVersion);
-            attribList.add (WGL_CONTEXT_MINOR_VERSION_ARB);
-            attribList.add (contextSpec.contextMinorVersion);
+            // a major version of 0 won't give us a context
+            if (contextSpec.contextMajorVersion > 0)
+            {
+                attribList.add (WGL_CONTEXT_MAJOR_VERSION_ARB);
+                attribList.add (contextSpec.contextMajorVersion);
+                attribList.add (WGL_CONTEXT_MINOR_VERSION_ARB);
+                attribList.add (contextSpec.contextMinorVersion);
+            }
 
             // specifying a profile was only introduced in 3.2, so we make sure 3.2 or
             // higher was specified before doing this
