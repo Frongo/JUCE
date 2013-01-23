@@ -109,8 +109,19 @@ class OpenGLContext::NativeContext
 public:
     NativeContext (Component& component,
                    const OpenGLPixelFormat& pixFormat,
-                   void* contextToShare)
+                   void* contextToShare,
+                   const OpenGLContextVersionSpecification& contextSpec)
     {
+        NSOpenGLPixelFormatAttribute profile = NSOpenGLProfileVersionLegacy;
+        
+        // OSX 10.7 allows using a 3.2 core. If we ask for a core profile, we'll try to get the version
+        // 3.2 core context. If we ask for a version higher than 2.1, then we'll also give the 3.2 context.
+        if ((contextSpec.contextMajorVersion == 2 && contextSpec.contextMinorVersion > 1) ||
+            (contextSpec.contextMajorVersion > 2) || (contextSpec.contextUseCoreProfile == true))
+        {
+            profile = NSOpenGLProfileVersion3_2Core;
+        }
+        
         NSOpenGLPixelFormatAttribute attribs[] =
         {
             NSOpenGLPFADoubleBuffer,
@@ -123,8 +134,11 @@ public:
             NSOpenGLPFAStencilSize, (NSOpenGLPixelFormatAttribute) pixFormat.stencilBufferBits,
             NSOpenGLPFAAccumSize,   (NSOpenGLPixelFormatAttribute) (pixFormat.accumulationBufferRedBits + pixFormat.accumulationBufferGreenBits
                                         + pixFormat.accumulationBufferBlueBits + pixFormat.accumulationBufferAlphaBits),
+            NSOpenGLPFAOpenGLProfile, profile,
+            NSOpenGLPFAMultisample,
             pixFormat.multisamplingLevel > 0 ? NSOpenGLPFASamples : (NSOpenGLPixelFormatAttribute) 0,
             (NSOpenGLPixelFormatAttribute) pixFormat.multisamplingLevel,
+            pixFormat.multisamplingLevel > 0 ? NSOpenGLPFASampleBuffers : (NSOpenGLPixelFormatAttribute) 0, (NSOpenGLPixelFormatAttribute) 1,
             0
         };
 
@@ -155,7 +169,6 @@ public:
     {
         [[NSNotificationCenter defaultCenter] removeObserver: view];
         [renderContext clearDrawable];
-        [renderContext setView: nil];
         [view setOpenGLContext: nil];
         renderContext = nil;
     }
