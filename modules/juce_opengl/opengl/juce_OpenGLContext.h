@@ -27,6 +27,7 @@
 #define __JUCE_OPENGLCONTEXT_JUCEHEADER__
 
 #include "juce_OpenGLPixelFormat.h"
+#include "juce_OpenGLContextVersionSpecification.h"
 #include "../native/juce_OpenGLExtensions.h"
 #include "juce_OpenGLRenderer.h"
 
@@ -84,6 +85,11 @@ public:
         Note: This must be called BEFORE attaching your context to a target component!
     */
     void setPixelFormat (const OpenGLPixelFormat& preferredPixelFormat) noexcept;
+
+    /** Sets the context version specification you'd like to create the context with.
+        Note: This must be called BEFORE attaching your context to a target component!
+    */
+    void setContextVersionSpecification (const OpenGLContextVersionSpecification& preferredSpecification) noexcept;
 
     /** Provides a context with which you'd like this context's resources to be shared.
         The object passed-in here is a platform-dependent native context object, and
@@ -237,6 +243,7 @@ private:
     OpenGLRenderer* renderer;
     ScopedPointer<Attachment> attachment;
     OpenGLPixelFormat pixelFormat;
+    OpenGLContextVersionSpecification contextVersionSpecification;
     void* contextToShareWith;
     bool renderComponents;
 

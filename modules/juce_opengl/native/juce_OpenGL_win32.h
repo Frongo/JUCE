@@ -31,7 +31,8 @@ class OpenGLContext::NativeContext
 public:
     NativeContext (Component& component,
                    const OpenGLPixelFormat& pixelFormat,
-                   void* contextToShareWith)
+                   void* contextToShareWith,
+                   const OpenGLContextVersionSpecification& contextSpec)
     {
         createNativeWindow (component);
 
@@ -51,21 +52,51 @@ public:
 
             const int wglFormat = wglChoosePixelFormatExtension (pixelFormat);
             deactivateCurrentContext();
+            releaseDC();
+            deleteRenderContext();
 
             if (wglFormat != pixFormat && wglFormat != 0)
             {
                 // can't change the pixel format of a window, so need to delete the
                 // old one and create a new one..
-                releaseDC();
                 nativeWindow = nullptr;
                 createNativeWindow (component);
 
-                if (SetPixelFormat (dc, wglFormat, &pfd))
-                {
-                    deleteRenderContext();
-                    renderContext = wglCreateContext (dc);
-                }
+                SetPixelFormat (dc, wglFormat, &pfd);
             }
+
+            else
+            {
+                SetPixelFormat (dc, pixFormat, &pfd);
+            }
+
+            // create the context with an attribute list
+            juce::Array<int> attribList;
+
+            // a major version of 0 won't give us a context
+            if (contextSpec.contextMajorVersion > 0)
+            {
+                attribList.add (WGL_CONTEXT_MAJOR_VERSION_ARB);
+                attribList.add (contextSpec.contextMajorVersion);
+                attribList.add (WGL_CONTEXT_MINOR_VERSION_ARB);
+                attribList.add (contextSpec.contextMinorVersion);
+            }
+
+            // specifying a profile was only introduced in 3.2, so we make sure 3.2 or
+            // higher was specified before doing this
+            if ((contextSpec.contextMajorVersion == 3 && contextSpec.contextMinorVersion > 1) ||
+                 contextSpec.contextMajorVersion > 3)
+            {
+                attribList.add (WGL_CONTEXT_PROFILE_MASK_ARB);
+                attribList.add (contextSpec.contextUseCoreProfile ?
+                                WGL_CONTEXT_CORE_PROFILE_BIT_ARB :
+                                WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB);
+            }
+
+            attribList.add (0);
+            attribList.add (0);
+
+            renderContext = wglCreateContextAttribsARB (dc, 0, attribList.getRawDataPointer());
 
             if (contextToShareWith != nullptr)
                 wglShareLists ((HGLRC) contextToShareWith, renderContext);
@@ -124,9 +155,10 @@ private:
     #define JUCE_DECLARE_WGL_EXTENSION_FUNCTION(name, returnType, params) \
         typedef returnType (__stdcall *type_ ## name) params; type_ ## name name;
 
-    JUCE_DECLARE_WGL_EXTENSION_FUNCTION (wglChoosePixelFormatARB,  BOOL, (HDC, const int*, const FLOAT*, UINT, int*, UINT*))
-    JUCE_DECLARE_WGL_EXTENSION_FUNCTION (wglSwapIntervalEXT,       BOOL, (int))
-    JUCE_DECLARE_WGL_EXTENSION_FUNCTION (wglGetSwapIntervalEXT,    int, ())
+    JUCE_DECLARE_WGL_EXTENSION_FUNCTION (wglChoosePixelFormatARB,       BOOL, (HDC, const int*, const FLOAT*, UINT, int*, UINT*))
+    JUCE_DECLARE_WGL_EXTENSION_FUNCTION (wglSwapIntervalEXT,            BOOL, (int))
+    JUCE_DECLARE_WGL_EXTENSION_FUNCTION (wglGetSwapIntervalEXT,         int, ())
+    JUCE_DECLARE_WGL_EXTENSION_FUNCTION (wglCreateContextAttribsARB,    HGLRC, (HDC, HGLRC, const int*))
     #undef JUCE_DECLARE_WGL_EXTENSION_FUNCTION
 
     void initialiseGLExtensions()
@@ -135,6 +167,7 @@ private:
         JUCE_INIT_WGL_FUNCTION (wglChoosePixelFormatARB);
         JUCE_INIT_WGL_FUNCTION (wglSwapIntervalEXT);
         JUCE_INIT_WGL_FUNCTION (wglGetSwapIntervalEXT);
+        JUCE_INIT_WGL_FUNCTION (wglCreateContextAttribsARB);
         #undef JUCE_INIT_WGL_FUNCTION
     }
 
