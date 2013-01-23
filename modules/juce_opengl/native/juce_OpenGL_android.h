@@ -38,7 +38,8 @@ class OpenGLContext::NativeContext
 public:
     NativeContext (Component& comp,
                    const OpenGLPixelFormat& pixelFormat,
-                   void* /*contextToShareWith*/)
+                   void* /*contextToShareWith*/,
+                   const OpenGLContextVersionSpecification& /*contextSpec*/)
         : component (comp),
           isInsideGLCallback (false)
     {

@@ -46,7 +46,8 @@ class OpenGLContext::NativeContext
 public:
     NativeContext (Component& component,
                    const OpenGLPixelFormat& pixelFormat,
-                   void* contextToShareWith)
+                   void* contextToShareWith,
+                   const OpenGLContextVersionSpecification& /*contextSpec*/)
         : frameBufferHandle (0), colorBufferHandle (0), depthBufferHandle (0),
           lastWidth (0), lastHeight (0), needToRebuildBuffers (false),
           swapFrames (0), useDepthBuffer (pixelFormat.depthBufferBits > 0)
