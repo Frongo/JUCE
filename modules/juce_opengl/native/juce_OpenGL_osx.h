@@ -112,15 +112,17 @@ public:
                    void* contextToShare,
                    const OpenGLContextVersionSpecification& contextSpec)
     {
-        NSOpenGLPixelFormatAttribute profile = NSOpenGLProfileVersionLegacy;
-        
-        // OSX 10.7 allows using a 3.2 core. If we ask for a core profile, we'll try to get the version
-        // 3.2 core context. If we ask for a version higher than 2.1, then we'll also give the 3.2 context.
-        if ((contextSpec.contextMajorVersion == 2 && contextSpec.contextMinorVersion > 1) ||
-            (contextSpec.contextMajorVersion > 2) || (contextSpec.contextUseCoreProfile == true))
-        {
-            profile = NSOpenGLProfileVersion3_2Core;
-        }
+        #if (JUCE_MAC && MAC_OS_X_VERSION_MIN_REQUIRED > MAC_OS_X_VERSION_10_6)
+            NSOpenGLPixelFormatAttribute profile = NSOpenGLProfileVersionLegacy;
+            
+            // OSX 10.7 allows using a 3.2 core. If we ask for a core profile, we'll try to get the version
+            // 3.2 core context. If we ask for a version higher than 2.1, then we'll also give the 3.2 context.
+            if ((contextSpec.contextMajorVersion == 2 && contextSpec.contextMinorVersion > 1) ||
+                (contextSpec.contextMajorVersion > 2) || (contextSpec.contextUseCoreProfile == true))
+            {
+                profile = NSOpenGLProfileVersion3_2Core;
+            }
+        #endif
         
         NSOpenGLPixelFormatAttribute attribs[] =
         {
@@ -134,7 +136,11 @@ public:
             NSOpenGLPFAStencilSize, (NSOpenGLPixelFormatAttribute) pixFormat.stencilBufferBits,
             NSOpenGLPFAAccumSize,   (NSOpenGLPixelFormatAttribute) (pixFormat.accumulationBufferRedBits + pixFormat.accumulationBufferGreenBits
                                         + pixFormat.accumulationBufferBlueBits + pixFormat.accumulationBufferAlphaBits),
-            NSOpenGLPFAOpenGLProfile, profile,
+            
+            #if (JUCE_MAC && MAC_OS_X_VERSION_MIN_REQUIRED > MAC_OS_X_VERSION_10_6)
+                NSOpenGLPFAOpenGLProfile, profile,
+            #endif
+            
             NSOpenGLPFAMultisample,
             pixFormat.multisamplingLevel > 0 ? NSOpenGLPFASamples : (NSOpenGLPixelFormatAttribute) 0,
             (NSOpenGLPixelFormatAttribute) pixFormat.multisamplingLevel,
